@@ -14,14 +14,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tabs{display:flex;gap:6px}
 .tab{padding:6px 14px;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;background:#fff;color:#555;transition:all .15s}
 .tab.active{background:#fff;color:#111;border-color:#aaa;font-weight:500}
-.btn{padding:6px 14px;border:1px solid #ccc;border-radius:8px;font-size:13px;cursor:pointer;background:#fff;color:#111;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.btn{padding:6px 13px;border:1px solid #ccc;border-radius:8px;font-size:13px;cursor:pointer;background:#fff;color:#111;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
 .btn:hover{background:#f0efeb}
 .btn.pri{background:#7F77DD;color:#fff;border-color:#7F77DD}
 .btn.pri:hover{background:#534AB7}
+.btn.danger{color:#A32D2D;border-color:#F09595}
+.btn.danger:hover{background:#FCEBEB}
 .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:1.5rem}
 .scard{background:#fff;border-radius:10px;padding:13px 15px;border:1px solid #eee}
 .scard .lbl{font-size:12px;color:#888;margin-bottom:4px}
 .scard .val{font-size:22px;font-weight:600}
+.sync-bar{display:flex;align-items:center;gap:6px;font-size:12px;padding:5px 10px;border-radius:8px;background:#EAF3DE;color:#3B6D11;margin-bottom:1rem}
+.sync-bar.syncing{background:#E6F1FB;color:#185FA5}
+.sync-bar.error{background:#FCEBEB;color:#A32D2D}
 .campaigns{display:flex;flex-direction:column;gap:10px}
 .empty{text-align:center;padding:3.5rem 1rem;color:#aaa;font-size:14px;background:#fff;border-radius:12px;border:1px solid #eee}
 .empty i{font-size:40px;display:block;margin-bottom:10px;opacity:.3}
@@ -41,8 +46,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .pbbar{height:100%;border-radius:4px;transition:width .3s}
 .ppct{font-size:11px;color:#999;min-width:26px;text-align:right}
 .tlist{border-top:1px solid #f0f0f0;padding:8px 12px;display:flex;flex-direction:column;gap:5px}
-.trow{border-radius:8px;background:#fafaf8;overflow:hidden;border:1px solid transparent;transition:border .12s}
-.trow:hover{border-color:#e8e8e8}
+.trow{border-radius:8px;background:#fafaf8;overflow:hidden;border:1px solid transparent}
 .trow.blocked{opacity:.6}
 .thdr{display:flex;align-items:center;gap:7px;padding:8px 10px;cursor:pointer}
 .thdr:hover{background:#f5f5f3}
@@ -56,8 +60,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .det-sec{display:flex;flex-direction:column;gap:6px}
 .det-lbl{font-size:11px;font-weight:600;color:#888;display:flex;align-items:center;gap:5px;text-transform:uppercase;letter-spacing:.4px}
 .prog-wrap{display:flex;align-items:center;gap:10px;padding:8px 10px;background:#fff;border:1px solid #eee;border-radius:8px}
-.ring-info .val{font-size:20px;font-weight:700;color:#111}
-.ring-info .sub-lbl{font-size:12px;color:#888}
+.ring-val{font-size:20px;font-weight:700;color:#111}
+.ring-sub{font-size:12px;color:#888}
 .sub-row{display:flex;align-items:center;gap:8px;padding:6px 9px;background:#fff;border:1px solid #eee;border-radius:7px}
 .sub-row input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#7F77DD}
 .sub-name{flex:1;font-size:13px;color:#111}
@@ -69,7 +73,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .notes-area:focus{outline:none;border-color:#7F77DD}
 .notes-view{font-size:13px;line-height:1.7;color:#111;word-break:break-word;padding:8px 10px;background:#fff;border:1px solid #eee;border-radius:8px;min-height:44px;cursor:text}
 .notes-view a{color:#534AB7;text-decoration:underline}
-.notes-placeholder{color:#aaa}
 .save-btn{font-size:11px;color:#534AB7;cursor:pointer;background:none;border:none;padding:2px 0;font-family:inherit}
 .alert-row{display:flex;align-items:flex-start;gap:9px;padding:10px 13px;background:#FAEEDA;border-radius:8px;border:1px solid #FAC775;font-size:13px;color:#854F0B;margin-bottom:8px}
 .chev{transition:transform .18s;font-size:13px;color:#bbb}
@@ -87,6 +90,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <body>
 <div class="wrap"><div id="app"></div></div>
 <script>
+
+// ============================================================
+// CONFIGURACION — reemplaza los dos valores de abajo
+// ============================================================
+const API_KEY = "PEGA_TU_API_KEY_AQUI";   // Tu API Key de jsonbin.io
+const BIN_ID  = "PEGA_TU_BIN_ID_AQUI";    // Tu Bin ID de jsonbin.io
+// ============================================================
+
 const ROLES=['Escritor','Diseñador','Editor video','CMS','Estratega','QA','Community manager','Director'];
 const SM={
   pendiente:{l:'Pendiente',c:'bgy'},
@@ -98,7 +109,49 @@ const SM={
   bloqueado:{l:'Bloqueado',c:'br'}
 };
 const today=new Date();
-let S={view:'tablero',openCamps:new Set(),openTasks:new Set(),editingNotes:new Set(),modal:null,mCid:null,campaigns:[]};
+let S={view:'tablero',openCamps:new Set(),openTasks:new Set(),editingNotes:new Set(),modal:null,mCid:null,syncStatus:'ok',campaigns:[]};
+
+async function loadFromCloud(){
+  setSyncStatus('syncing');
+  try{
+    const r=await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`,{
+      headers:{'X-Master-Key':API_KEY,'X-Bin-Meta':'false'}
+    });
+    if(!r.ok) throw new Error('fetch failed');
+    const data=await r.json();
+    S.campaigns=data.campaigns||[];
+    setSyncStatus('ok');
+  }catch(e){
+    setSyncStatus('error');
+    const local=localStorage.getItem('gestor_backup');
+    if(local) S.campaigns=JSON.parse(local).campaigns||[];
+  }
+  render();
+}
+
+async function saveToCloud(){
+  setSyncStatus('syncing');
+  render();
+  try{
+    const payload={campaigns:S.campaigns};
+    await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Master-Key':API_KEY},
+      body:JSON.stringify(payload)
+    });
+    localStorage.setItem('gestor_backup',JSON.stringify(payload));
+    setSyncStatus('ok');
+  }catch(e){
+    setSyncStatus('error');
+    localStorage.setItem('gestor_backup',JSON.stringify({campaigns:S.campaigns}));
+  }
+  render();
+}
+
+function setSyncStatus(s){S.syncStatus=s;}
+
+function persist(){saveToCloud();}
+
 function tStatus(t,all){
   if(t.status==='entregado'||t.status==='aprobado')return t.status;
   if(t.dep){const p=all.find(x=>x.id===t.dep);if(p&&p.status!=='aprobado'&&p.status!=='entregado')return 'bloqueado';}
@@ -151,16 +204,26 @@ function svgRing(pct,sz){
   const col=pct==null?'#eee':pct>=80?'#1D9E75':pct>=40?'#BA7517':'#D85A30';
   return `<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#eee" stroke-width="3.5"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="3.5" stroke-dasharray="${dash} ${circ}" stroke-dashoffset="${circ/4}" stroke-linecap="round"/></svg>`;
 }
+
 function render(){
   const g=gStats(),alerts=allAlerts();
+  const syncMeta={
+    ok:{cls:'sync-bar',icon:'ti-cloud-check',txt:'Sincronizado con la nube'},
+    syncing:{cls:'sync-bar syncing',icon:'ti-loader',txt:'Guardando...'},
+    error:{cls:'sync-bar error',icon:'ti-cloud-off',txt:'Sin conexión — guardado local'}
+  }[S.syncStatus]||{cls:'sync-bar',icon:'ti-cloud',txt:''};
+
   let h=`<div class="topbar">
     <h1><i class="ti ti-layout-kanban"></i> Gestor de campañas</h1>
     <div class="tabs">
       <button class="tab ${S.view==='tablero'?'active':''}" onclick="setV('tablero')">Tablero</button>
       <button class="tab ${S.view==='alertas'?'active':''}" onclick="setV('alertas')">Alertas${alerts.length?` <span class="badge br" style="margin-left:3px;padding:1px 6px;font-size:10px">${alerts.length}</span>`:''}</button>
     </div>
+    <button class="btn" onclick="loadFromCloud()" title="Recargar datos"><i class="ti ti-refresh"></i></button>
+    <button class="btn danger" onclick="confirmReset()"><i class="ti ti-trash"></i> Resetear</button>
     <button class="btn pri" onclick="oNC()"><i class="ti ti-plus"></i> Nueva campaña</button>
   </div>
+  <div class="${syncMeta.cls}" style="margin-bottom:1rem"><i class="ti ${syncMeta.icon}" style="font-size:14px"></i> ${syncMeta.txt}</div>
   <div class="stats-row">
     <div class="scard"><div class="lbl">Campañas</div><div class="val">${g.camps}</div></div>
     <div class="scard"><div class="lbl">Tareas</div><div class="val">${g.total}</div></div>
@@ -168,6 +231,7 @@ function render(){
     <div class="scard"><div class="lbl">Retrasadas</div><div class="val" style="color:#A32D2D">${g.delayed}</div></div>
     <div class="scard"><div class="lbl">Bloqueadas</div><div class="val" style="color:#854F0B">${g.blocked}</div></div>
   </div>`;
+
   if(S.view==='alertas'){
     h+=`<div class="campaigns">`;
     if(!alerts.length)h+=`<div class="empty"><i class="ti ti-circle-check" style="color:#1D9E75"></i>Sin alertas activas.</div>`;
@@ -216,9 +280,9 @@ function render(){
                 <div class="det-lbl"><i class="ti ti-chart-pie" style="font-size:13px"></i> Progreso</div>
                 <div class="prog-wrap">
                   ${svgRing(pct2,44)}
-                  <div class="ring-info" style="flex:0 0 auto">
-                    <div class="val">${pct2===null?'—':pct2+'%'}</div>
-                    <div class="sub-lbl">${pct2===null?'Sin subtareas':`${(t.subs||[]).filter(s=>s.done).length}/${(t.subs||[]).length}`}</div>
+                  <div style="flex:0 0 auto">
+                    <div class="ring-val">${pct2===null?'—':pct2+'%'}</div>
+                    <div class="ring-sub">${pct2===null?'Sin subtareas':`${(t.subs||[]).filter(s=>s.done).length}/${(t.subs||[]).length} completadas`}</div>
                   </div>
                   ${pct2!==null?`<div style="flex:1;height:5px;background:#eee;border-radius:4px;overflow:hidden"><div style="height:100%;width:${pct2}%;background:${pc(pct2)};border-radius:4px;transition:width .3s"></div></div>`:'<div style="flex:1"></div>'}
                 </div>
@@ -238,8 +302,8 @@ function render(){
               <div class="det-sec">
                 <div class="det-lbl"><i class="ti ti-notes" style="font-size:13px"></i> Notas y links</div>
                 ${editN
-                  ?`<textarea class="notes-area" id="na-${t.id}">${t.notes||''}</textarea><button class="save-btn" onclick="saveNote('${c.id}','${t.id}')">Guardar</button>`
-                  :`<div class="notes-view" onclick="editNote('${t.id}')">${t.notes?`<span>${renderNotes(t.notes)}</span>`:`<span class="notes-placeholder">Clic para agregar notas o pegar links...</span>`}</div>`
+                  ?`<textarea class="notes-area" id="na-${t.id}">${t.notes||''}</textarea><button class="save-btn" onclick="saveNote('${c.id}','${t.id}')">Guardar nota</button>`
+                  :`<div class="notes-view" onclick="editNote('${t.id}')">${t.notes?renderNotes(t.notes):`<span style="color:#aaa">Clic para agregar notas o pegar links...</span>`}</div>`
                 }
               </div>
             </div>`;
@@ -252,6 +316,7 @@ function render(){
     });
     h+=`</div>`;
   }
+
   if(S.modal==='nc'){h+=`<div class="modal-bg"><div class="modal"><h2>Nueva campaña</h2>
     <div class="fr"><label>Nombre</label><input id="mc-n" placeholder="Nombre de la campaña"></div>
     <div class="fr"><label>Cliente</label><input id="mc-c" placeholder="Cliente (opcional)"></div>
@@ -266,25 +331,34 @@ function render(){
     <div class="fr"><label>Depende de</label><select id="mt-dep"><option value="">— ninguna —</option>${c?c.tasks.map(t=>`<option value="${t.id}">${t.name}</option>`).join(''):''}</select></div>
     <div class="ma"><button class="btn" onclick="closeM()">Cancelar</button><button class="btn pri" onclick="saveT()">Agregar</button></div>
   </div></div>`;}
+  if(S.modal==='reset'){h+=`<div class="modal-bg"><div class="modal"><h2>¿Borrar todos los datos?</h2>
+    <p style="font-size:13px;color:#888;margin-bottom:1rem">Esto elimina todas las campañas y tareas de la nube. No se puede deshacer.</p>
+    <div class="ma"><button class="btn" onclick="closeM()">Cancelar</button><button class="btn danger" onclick="doReset()">Sí, borrar todo</button></div>
+  </div></div>`;}
+
   document.getElementById('app').innerHTML=h;
 }
+
 function setV(v){S.view=v;render();}
 function tgC(id){S.openCamps.has(id)?S.openCamps.delete(id):S.openCamps.add(id);render();}
 function tgT(id){S.openTasks.has(id)?S.openTasks.delete(id):S.openTasks.add(id);render();}
 function oNC(){S.modal='nc';render();}
 function oNT(cid){S.modal='nt';S.mCid=cid;render();}
 function closeM(){S.modal=null;render();}
-function saveC(){const n=document.getElementById('mc-n').value.trim();if(!n)return;const id='c'+Date.now();S.campaigns.push({id,name:n,client:document.getElementById('mc-c').value.trim(),deadline:document.getElementById('mc-d').value,tasks:[]});S.openCamps.add(id);closeM();}
-function saveT(){const n=document.getElementById('mt-n').value.trim();if(!n)return;const c=S.campaigns.find(x=>x.id===S.mCid);if(c)c.tasks.push({id:'t'+Date.now(),name:n,role:document.getElementById('mt-r').value,status:'pendiente',deadline:document.getElementById('mt-d').value,dep:document.getElementById('mt-dep').value||null,subs:[],notes:''});closeM();}
-function chSt(cid,tid,val){const c=S.campaigns.find(x=>x.id===cid);if(c){const t=c.tasks.find(x=>x.id===tid);if(t)t.status=val;}render();}
-function delT(cid,tid){const c=S.campaigns.find(x=>x.id===cid);if(c)c.tasks=c.tasks.filter(t=>t.id!==tid);render();}
-function delC(cid){S.campaigns=S.campaigns.filter(c=>c.id!==cid);S.openCamps.delete(cid);render();}
-function addSub(cid,tid){const inp=document.getElementById('si-'+tid);if(!inp||!inp.value.trim())return;const c=S.campaigns.find(x=>x.id===cid);if(c){const t=c.tasks.find(x=>x.id===tid);if(t){if(!t.subs)t.subs=[];t.subs.push({name:inp.value.trim(),done:false});}}render();setTimeout(()=>{const el=document.getElementById('si-'+tid);if(el)el.focus();},50);}
-function tgSub(cid,tid,idx,val){const c=S.campaigns.find(x=>x.id===cid);if(c){const t=c.tasks.find(x=>x.id===tid);if(t&&t.subs)t.subs[idx].done=val;}render();}
-function delSub(cid,tid,idx){const c=S.campaigns.find(x=>x.id===cid);if(c){const t=c.tasks.find(x=>x.id===tid);if(t&&t.subs)t.subs.splice(idx,1);}render();}
+function confirmReset(){S.modal='reset';render();}
+function doReset(){S.campaigns=[];S.modal=null;persist();}
+function saveC(){const n=document.getElementById('mc-n').value.trim();if(!n)return;const id='c'+Date.now();S.campaigns.push({id,name:n,client:document.getElementById('mc-c').value.trim(),deadline:document.getElementById('mc-d').value,tasks:[]});S.openCamps.add(id);S.modal=null;persist();}
+function saveT(){const n=document.getElementById('mt-n').value.trim();if(!n)return;const c=S.campaigns.find(x=>x.id===S.mCid);if(c)c.tasks.push({id:'t'+Date.now(),name:n,role:document.getElementById('mt-r').value,status:'pendiente',deadline:document.getElementById('mt-d').value,dep:document.getElementById('mt-dep').value||null,subs:[],notes:''});S.modal=null;persist();}
+function chSt(cid,tid,val){const c=S.campaigns.find(x=>x.id===cid);if(c){const t=c.tasks.find(x=>x.id===tid);if(t)t.status=val;}persist();}
+function delT(cid,tid){const c=S.campaigns.find(x=>x.id===cid);if(c)c.tasks=c.tasks.filter(t=>t.id!==tid);persist();}
+function delC(cid){S.campaigns=S.campaigns.filter(c=>c.id!==cid);S.openCamps.delete(cid);persist();}
+function addSub(cid,tid){const inp=document.getElementById('si-'+tid);if(!inp||!inp.value.trim())return;const c=S.campaigns.find(x=>x.id===cid);if(c){const t=c.tasks.find(x=>x.id===tid);if(t){if(!t.subs)t.subs=[];t.subs.push({name:inp.value.trim(),done:false});}}persist();setTimeout(()=>{const el=document.getElementById('si-'+tid);if(el)el.focus();},50);}
+function tgSub(cid,tid,idx,val){const c=S.campaigns.find(x=>x.id===cid);if(c){const t=c.tasks.find(x=>x.id===tid);if(t&&t.subs)t.subs[idx].done=val;}persist();}
+function delSub(cid,tid,idx){const c=S.campaigns.find(x=>x.id===cid);if(c){const t=c.tasks.find(x=>x.id===tid);if(t&&t.subs)t.subs.splice(idx,1);}persist();}
 function editNote(tid){S.editingNotes.add(tid);render();setTimeout(()=>{const el=document.getElementById('na-'+tid);if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}},50);}
-function saveNote(cid,tid){const el=document.getElementById('na-'+tid);if(!el)return;const c=S.campaigns.find(x=>x.id===cid);if(c){const t=c.tasks.find(x=>x.id===tid);if(t)t.notes=el.value;}S.editingNotes.delete(tid);render();}
-render();
+function saveNote(cid,tid){const el=document.getElementById('na-'+tid);if(!el)return;const c=S.campaigns.find(x=>x.id===cid);if(c){const t=c.tasks.find(x=>x.id===tid);if(t)t.notes=el.value;}S.editingNotes.delete(tid);persist();}
+
+loadFromCloud();
 </script>
 </body>
 </html>
