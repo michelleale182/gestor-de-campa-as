@@ -94,8 +94,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 // ============================================================
 // CONFIGURACION — reemplaza los dos valores de abajo
 // ============================================================
-const API_KEY = "$2a$10$xfgescl8EymKPQvzowic/u17NMPidGkY27ViELwr../d0YriOb4XS";   // Tu API Key de jsonbin.io
-const BIN_ID  = "6a1f339ff5f4af5e29af0021";    // Tu Bin ID de jsonbin.io
+const API_KEY = "PEGA_TU_API_KEY_AQUI";   // Tu API Key de jsonbin.io
+const BIN_ID  = "PEGA_TU_BIN_ID_AQUI";    // Tu Bin ID de jsonbin.io
 // ============================================================
 
 const ROLES=['Escritor','Diseñador','Editor video','CMS','Estratega','QA','Community manager','Director'];
@@ -115,7 +115,7 @@ async function loadFromCloud(){
   setSyncStatus('syncing');
   try{
     const r=await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`,{
-      headers:{'X-Master-Key':API_KEY,'X-Bin-Meta':'false'}
+      headers:{'X-Access-Key':API_KEY,'X-Bin-Meta':'false'}
     });
     if(!r.ok) throw new Error('fetch failed');
     const data=await r.json();
@@ -136,7 +136,7 @@ async function saveToCloud(){
     const payload={campaigns:S.campaigns};
     await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`,{
       method:'PUT',
-      headers:{'Content-Type':'application/json','X-Master-Key':API_KEY},
+      headers:{'Content-Type':'application/json','X-Access-Key':API_KEY},
       body:JSON.stringify(payload)
     });
     localStorage.setItem('gestor_backup',JSON.stringify(payload));
