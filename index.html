@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestor de Campañas</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f4f0;color:#1a1a1a;min-height:100vh}
+a{color:inherit}
+.wrap{max-width:820px;margin:0 auto;padding:2rem 1rem}
+.topbar{display:flex;align-items:center;gap:12px;margin-bottom:1.5rem;flex-wrap:wrap}
+.topbar h1{font-size:20px;font-weight:600;flex:1;display:flex;align-items:center;gap:8px}
+.tabs{display:flex;gap:6px}
+.tab{padding:6px 16px;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;background:#fff;color:#555;transition:all .15s}
+.tab.active{background:#fff;color:#111;border-color:#aaa;font-weight:500}
+.btn{padding:7px 16px;border:1px solid #ccc;border-radius:8px;font-size:13px;cursor:pointer;background:#fff;color:#111;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.btn:hover{background:#f0efeb}
+.btn.primary{background:#7F77DD;color:#fff;border-color:#7F77DD}
+.btn.primary:hover{background:#534AB7}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1.5rem}
+.stat-card{background:#fff;border-radius:10px;padding:14px 16px;border:1px solid #eee}
+.stat-card .label{font-size:12px;color:#888;margin-bottom:4px}
+.stat-card .val{font-size:24px;font-weight:600}
+.campaigns{display:flex;flex-direction:column;gap:10px}
+.empty-state{text-align:center;padding:4rem 1rem;color:#aaa;font-size:15px;background:#fff;border-radius:12px;border:1px solid #eee}
+.empty-state i{font-size:48px;display:block;margin-bottom:12px;opacity:.3}
+.campaign-card{background:#fff;border:1px solid #e8e8e8;border-radius:12px;overflow:hidden}
+.camp-header{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;user-select:none;transition:background .12s}
+.camp-header:hover{background:#fafaf8}
+.camp-name{font-size:15px;font-weight:600;flex:1}
+.camp-client{font-size:12px;color:#999}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.badge.green{background:#EAF3DE;color:#3B6D11}
+.badge.amber{background:#FAEEDA;color:#854F0B}
+.badge.red{background:#FCEBEB;color:#A32D2D}
+.badge.gray{background:#F1EFE8;color:#5F5E5A}
+.badge.blue{background:#E6F1FB;color:#185FA5}
+.prog-wrap{flex:0 0 80px;height:5px;background:#eee;border-radius:4px;overflow:hidden}
+.prog-bar{height:100%;border-radius:4px;transition:width .3s}
+.prog-pct{font-size:12px;color:#999;min-width:28px;text-align:right}
+.tasks-list{border-top:1px solid #f0f0f0;padding:10px 14px;display:flex;flex-direction:column;gap:6px}
+.task-row{display:flex;align-items:center;gap:8px;padding:9px 11px;border-radius:8px;background:#fafaf8;border:1px solid transparent;transition:border .12s}
+.task-row:hover{border-color:#e0e0e0}
+.task-row.blocked{opacity:.6}
+.task-name{flex:1;font-size:13px}
+.dep-note{font-size:11px;color:#aaa;display:flex;align-items:center;gap:3px;margin-top:2px}
+.task-role{font-size:11px;color:#888;padding:2px 8px;border:1px solid #e8e8e8;border-radius:20px;white-space:nowrap;background:#fff}
+.icon-btn{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:7px;border:1px solid #e8e8e8;background:#fff;cursor:pointer;font-size:15px;color:#999;transition:all .12s}
+.icon-btn:hover{background:#f0efeb;color:#333}
+.status-sel{font-size:11px;padding:3px 6px;border:1px solid #e0e0e0;border-radius:6px;background:#fff;color:#555;cursor:pointer}
+.modal-wrap{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:100;padding:1rem}
+.modal{background:#fff;border-radius:14px;border:1px solid #e0e0e0;padding:1.75rem;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.12)}
+.modal h2{font-size:17px;font-weight:600;margin-bottom:1.25rem}
+.form-row{margin-bottom:13px}
+.form-row label{display:block;font-size:12px;color:#888;margin-bottom:5px;font-weight:500}
+.form-row input,.form-row select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;background:#fff;color:#111;font-family:inherit}
+.form-row input:focus,.form-row select:focus{outline:none;border-color:#7F77DD}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem}
+.alert-row{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;background:#FAEEDA;border-radius:9px;border:1px solid #FAC775;font-size:13px;color:#854F0B;margin-bottom:8px}
+.alert-row strong{display:block;margin-bottom:2px}
+.chevron{transition:transform .2s;font-size:14px;color:#aaa}
+.chevron.open{transform:rotate(90deg)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="app"></div>
+</div>
+
+<script>
+const ROLES=['Escritor','Diseñador','Editor video','CMS','Estratega','QA','Community manager','Director'];
+const STATUS_META={
+  pendiente:{label:'Pendiente',cls:'gray'},
+  'en curso':{label:'En curso',cls:'blue'},
+  revision:{label:'En revisión',cls:'amber'},
+  aprobado:{label:'Aprobado',cls:'green'},
+  entregado:{label:'Entregado',cls:'green'},
+  retrasado:{label:'Retrasado',cls:'red'},
+  bloqueado:{label:'Bloqueado',cls:'red'}
+};
+
+const today=new Date();
+
+let state={view:'tablero',openCamps:new Set(),modal:null,modalCampId:null,campaigns:[]};
+
+function taskStatus(t,all){
+  if(t.status==='entregado'||t.status==='aprobado') return t.status;
+  if(t.dep){const p=all.find(x=>x.id===t.dep);if(p&&p.status!=='aprobado'&&p.status!=='entregado') return 'bloqueado';}
+  if(t.deadline&&new Date(t.deadline)<today) return 'retrasado';
+  return t.status;
+}
+function campProgress(c){
+  if(!c.tasks.length) return 0;
+  return Math.round(c.tasks.filter(t=>t.status==='aprobado'||t.status==='entregado').length/c.tasks.length*100);
+}
+function campHealth(c){
+  if(!c.tasks.length) return 'gray';
+  if(c.tasks.some(t=>{const s=taskStatus(t,c.tasks);return s==='retrasado'||s==='bloqueado';})) return 'red';
+  if(c.tasks.some(t=>taskStatus(t,c.tasks)==='revision')) return 'amber';
+  if(campProgress(c)>=100) return 'green';
+  return 'blue';
+}
+function progColor(p){return p>=80?'#1D9E75':p>=40?'#BA7517':'#D85A30';}
+function globalStats(){
+  let total=0,done=0,delayed=0,blocked=0;
+  state.campaigns.forEach(c=>c.tasks.forEach(t=>{
+    total++;const s=taskStatus(t,c.tasks);
+    if(s==='aprobado'||s==='entregado') done++;
+    if(s==='retrasado') delayed++;
+    if(s==='bloqueado') blocked++;
+  }));
+  return{total,done,delayed,blocked,camps:state.campaigns.length};
+}
+function allAlerts(){
+  const a=[];
+  state.campaigns.forEach(c=>c.tasks.forEach(t=>{
+    const s=taskStatus(t,c.tasks);
+    if(s==='retrasado') a.push({camp:c.name,task:t.name,role:t.role,reason:'Fecha límite vencida'});
+    if(s==='bloqueado'){const dep=c.tasks.find(x=>x.id===t.dep);a.push({camp:c.name,task:t.name,role:t.role,reason:`Bloqueada por: "${dep?dep.name:'tarea anterior'}"`});}
+  }));
+  return a;
+}
+
+function render(){
+  const g=globalStats();
+  const alerts=allAlerts();
+  let html=`
+  <div class="topbar">
+    <h1><i class="ti ti-layout-kanban"></i> Gestor de campañas</h1>
+    <div class="tabs">
+      <button class="tab ${state.view==='tablero'?'active':''}" onclick="setView('tablero')">Tablero</button>
+      <button class="tab ${state.view==='alertas'?'active':''}" onclick="setView('alertas')">Alertas${alerts.length?` <span class="badge red" style="margin-left:4px">${alerts.length}</span>`:''}</button>
+    </div>
+    <button class="btn primary" onclick="openNewCamp()"><i class="ti ti-plus"></i> Nueva campaña</button>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="label">Campañas</div><div class="val">${g.camps}</div></div>
+    <div class="stat-card"><div class="label">Tareas</div><div class="val">${g.total}</div></div>
+    <div class="stat-card"><div class="label">Completadas</div><div class="val" style="color:#1D9E75">${g.done}</div></div>
+    <div class="stat-card"><div class="label">Retrasadas</div><div class="val" style="color:#A32D2D">${g.delayed}</div></div>
+    <div class="stat-card"><div class="label">Bloqueadas</div><div class="val" style="color:#854F0B">${g.blocked}</div></div>
+  </div>`;
+
+  if(state.view==='alertas'){
+    html+=`<div class="campaigns">`;
+    if(!alerts.length) html+=`<div class="empty-state"><i class="ti ti-circle-check" style="color:#1D9E75"></i>Sin alertas activas. Todo en orden.</div>`;
+    alerts.forEach(a=>{html+=`<div class="alert-row"><i class="ti ti-alert-triangle" style="font-size:18px;margin-top:1px"></i><div><strong>${a.camp} — ${a.task}</strong><span class="task-role" style="margin-left:6px">${a.role}</span><div style="font-size:12px;margin-top:3px">${a.reason}</div></div></div>`;});
+    html+=`</div>`;
+  } else {
+    html+=`<div class="campaigns">`;
+    if(!state.campaigns.length){
+      html+=`<div class="empty-state"><i class="ti ti-speakerphone"></i>No hay campañas aún.<br>Crea la primera con el botón de arriba.</div>`;
+    } else {
+      state.campaigns.forEach(c=>{
+        const pct=campProgress(c);
+        const health=campHealth(c);
+        const hm=STATUS_META[health]||STATUS_META['pendiente'];
+        const open=state.openCamps.has(c.id);
+        const healthLabel={red:'Alerta',amber:'En riesgo',green:'Al día',blue:'En curso',gray:'Sin tareas'}[health]||'En curso';
+        html+=`<div class="campaign-card">
+          <div class="camp-header" onclick="toggleCamp('${c.id}')">
+            <i class="chevron ti ti-chevron-right ${open?'open':''}"></i>
+            <span class="camp-name">${c.name}</span>
+            ${c.client?`<span class="camp-client">${c.client}</span>`:''}
+            <span class="badge ${hm.cls}">${healthLabel}</span>
+            <div class="prog-wrap"><div class="prog-bar" style="width:${pct}%;background:${progColor(pct)}"></div></div>
+            <span class="prog-pct">${pct}%</span>
+            <button class="icon-btn" title="Nueva tarea" onclick="event.stopPropagation();openNewTask('${c.id}')"><i class="ti ti-plus"></i></button>
+            <button class="icon-btn" title="Eliminar campaña" onclick="event.stopPropagation();deleteCamp('${c.id}')"><i class="ti ti-trash"></i></button>
+          </div>`;
+        if(open){
+          html+=`<div class="tasks-list">`;
+          if(!c.tasks.length) html+=`<p style="font-size:13px;color:#aaa;padding:4px 0">Sin tareas. Usa el botón + para agregar.</p>`;
+          c.tasks.forEach(t=>{
+            const s=taskStatus(t,c.tasks);
+            const sm=STATUS_META[s]||STATUS_META['pendiente'];
+            const depTask=t.dep?c.tasks.find(x=>x.id===t.dep):null;
+            html+=`<div class="task-row ${s==='bloqueado'?'blocked':''}">
+              <div class="task-name">${t.name}${depTask?`<div class="dep-note"><i class="ti ti-git-branch" style="font-size:11px"></i>${depTask.name}</div>`:''}</div>
+              <span class="task-role">${t.role}</span>
+              <span class="badge ${sm.cls}">${sm.label}</span>
+              <select class="status-sel" onchange="changeStatus('${c.id}','${t.id}',this.value)">
+                ${Object.entries(STATUS_META).filter(([k])=>k!=='bloqueado'&&k!=='retrasado').map(([k,v])=>`<option value="${k}"${t.status===k?' selected':''}>${v.label}</option>`).join('')}
+              </select>
+              <button class="icon-btn" onclick="deleteTask('${c.id}','${t.id}')"><i class="ti ti-x"></i></button>
+            </div>`;
+          });
+          html+=`</div>`;
+        }
+        html+=`</div>`;
+      });
+    }
+    html+=`</div>`;
+  }
+
+  if(state.modal==='newCamp'){
+    html+=`<div class="modal-wrap" onclick="closeModal()"><div class="modal" onclick="event.stopPropagation()">
+      <h2>Nueva campaña</h2>
+      <div class="form-row"><label>Nombre de la campaña</label><input id="mc-name" placeholder="Ej: Lanzamiento Producto X"></div>
+      <div class="form-row"><label>Cliente (opcional)</label><input id="mc-client" placeholder="Nombre del cliente"></div>
+      <div class="form-row"><label>Fecha límite</label><input type="date" id="mc-dl"></div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal()">Cancelar</button>
+        <button class="btn primary" onclick="saveCamp()">Crear campaña</button>
+      </div>
+    </div></div>`;
+  }
+  if(state.modal==='newTask'){
+    const c=state.campaigns.find(x=>x.id===state.modalCampId);
+    html+=`<div class="modal-wrap" onclick="closeModal()"><div class="modal" onclick="event.stopPropagation()">
+      <h2>Nueva tarea${c?' — '+c.name:''}</h2>
+      <div class="form-row"><label>Nombre de la tarea</label><input id="mt-name" placeholder="Ej: Guión, diseño, edición..."></div>
+      <div class="form-row"><label>Rol asignado</label><select id="mt-role">${ROLES.map(r=>`<option>${r}</option>`).join('')}</select></div>
+      <div class="form-row"><label>Fecha límite</label><input type="date" id="mt-dl"></div>
+      <div class="form-row"><label>Depende de (opcional)</label><select id="mt-dep"><option value="">— ninguna —</option>${c?c.tasks.map(t=>`<option value="${t.id}">${t.name}</option>`).join(''):''}</select></div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal()">Cancelar</button>
+        <button class="btn primary" onclick="saveTask()">Agregar tarea</button>
+      </div>
+    </div></div>`;
+  }
+
+  document.getElementById('app').innerHTML=html;
+}
+
+function setView(v){state.view=v;render();}
+function toggleCamp(id){state.openCamps.has(id)?state.openCamps.delete(id):state.openCamps.add(id);render();}
+function openNewCamp(){state.modal='newCamp';render();}
+function openNewTask(cid){state.modal='newTask';state.modalCampId=cid;render();}
+function closeModal(){state.modal=null;render();}
+function saveCamp(){
+  const name=document.getElementById('mc-name').value.trim();
+  if(!name) return;
+  const id='c'+Date.now();
+  state.campaigns.push({id,name,client:document.getElementById('mc-client').value.trim(),deadline:document.getElementById('mc-dl').value,tasks:[]});
+  state.openCamps.add(id);closeModal();
+}
+function saveTask(){
+  const name=document.getElementById('mt-name').value.trim();
+  if(!name) return;
+  const c=state.campaigns.find(x=>x.id===state.modalCampId);
+  if(c) c.tasks.push({id:'t'+Date.now(),name,role:document.getElementById('mt-role').value,status:'pendiente',deadline:document.getElementById('mt-dl').value,dep:document.getElementById('mt-dep').value||null});
+  closeModal();
+}
+function changeStatus(cid,tid,val){
+  const c=state.campaigns.find(x=>x.id===cid);
+  if(c){const t=c.tasks.find(x=>x.id===tid);if(t)t.status=val;}
+  render();
+}
+function deleteTask(cid,tid){
+  const c=state.campaigns.find(x=>x.id===cid);
+  if(c) c.tasks=c.tasks.filter(t=>t.id!==tid);render();
+}
+function deleteCamp(cid){
+  state.campaigns=state.campaigns.filter(c=>c.id!==cid);
+  state.openCamps.delete(cid);render();
+}
+render();
+</script>
+</body>
+</html>
